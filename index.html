@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Updates - Active Tickets Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f7fa; color: #333; padding: 20px; }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(to right, #f59e0b, #d97706); /* Yellow gradient */
+            color: white;
+            padding: 25px 30px;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 150px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .controls {
+            padding: 20px 30px;
+            background: #fef9c3; /* Light yellow background */
+            border-bottom: 1px solid #fde68a;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        #searchInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #fde68a;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+        
+        .refresh-btn {
+            background: #f59e0b; /* Yellow button */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .refresh-btn:hover {
+            background: #d97706;
+        }
+        
+        .table-container {
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+        
+        th {
+            background: #fef9c3; /* Yellow header background */
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #92400e; /* Dark yellow/brown text */
+            border-bottom: 2px solid #fde68a;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #fef9c3;
+            vertical-align: top;
+        }
+        
+        tr:hover {
+            background: #fef9c3;
+        }
+        
+        .ticket-id {
+            background: #fef3c7; /* Light yellow background */
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #92400e; /* Dark yellow/brown text */
+        }
+        
+        .update-type {
+            background-color: #fef3c7; /* Light yellow */
+            color: #92400e; /* Dark yellow/brown */
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 5px;
+            border: 1px solid #fde68a;
+        }
+        
+        .publication-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 3px;
+        }
+        
+        .description {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-width: 250px;
+        }
+        
+        .assignee {
+            background: #fef3c7; /* Light yellow */
+            color: #92400e; /* Dark yellow/brown */
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #fde68a;
+        }
+        
+        .talent-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .files-link {
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .files-attached {
+            color: #059669;
+        }
+        
+        .reference-link a {
+            color: #f59e0b; /* Yellow links */
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .reference-link a:hover {
+            text-decoration: underline;
+            color: #d97706;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #dc2626;
+        }
+        
+        .error button {
+            margin-top: 20px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .unassigned-badge {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .fa-ticket-alt {
+            font-size: 1.5rem;
+        }
+        
+        /* New: Empty state styles */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+            display: none;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            color: #fbbf24;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #64748b;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+        
+        .empty-state .action-btn {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-ticket-alt"></i> Website Updates - Active Tickets Tracker</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTickets">0</div>
+                    <div>Active Tickets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="unassigned">0</div>
+                    <div>Unassigned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="withFiles">0</div>
+                    <div>With Files</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search by Ticket ID, Talent Name, Publication, or Assignee...">
+            <button id="refreshBtn" class="refresh-btn">
+                <i class="fas fa-redo-alt"></i> Refresh
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Loading active website update tickets...</p>
+            </div>
+            
+            <div id="error" class="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                <h3>Unable to load tickets</h3>
+                <p id="errorMessage">Please check your connection and try again.</p>
+                <button onclick="loadTickets()">Try Again</button>
+            </div>
+            
+            <!-- New: Empty state message -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-clipboard-check"></i>
+                <h3>No Active Tickets Found</h3>
+                <p>There are currently no active website update tickets in the system. All tickets may have been completed or assigned.</p>
+                <button onclick="loadTickets()" class="action-btn">
+                    <i class="fas fa-redo-alt"></i> Check Again
+                </button>
+            </div>
+            
+            <table id="ticketsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Date Created</th>
+                        <th>Talent Name</th>
+                        <th>Update Type</th>
+                        <th>Publication Title</th>
+                        <th>Files & Links</th>
+                        <th>Assigned To</th>
+                    </tr>
+                </thead>
+                <tbody id="ticketsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const ACTIVE_TICKETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLmIeIOdtDoDMI0WOMYMjsa77L2S-gF9OyL7eyLvbnGJatNeFDHRgiN5qLZPhYEDsUx1wINXebriLT/pub?gid=1410126172&single=true&output=csv';
+        
+        async function loadTickets() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const table = document.getElementById('ticketsTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            table.style.display = 'none';
+            emptyState.style.display = 'none';
+            
+            try {
+                console.log('Loading website update tickets from:', ACTIVE_TICKETS_CSV_URL);
+                const response = await fetch(ACTIVE_TICKETS_CSV_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                
+                if (!csvText || csvText.trim().length === 0) {
+                    throw new Error('CSV file is empty');
+                }
+                
+                const rows = csvText.split('\n').filter(row => row.trim() !== '');
+                const tickets = [];
+                
+                if (rows.length <= 1) {
+                    // No data rows (only headers or completely empty)
+                    showEmptyState();
+                    updateStats([]);
+                    return;
+                }
+                
+                // Process data rows with your column structure
+                for (let i = 1; i < rows.length; i++) {
+                    const cols = parseCSVRow(rows[i]);
+                    
+                    if (cols.length === 0) continue;
+                    
+                    // Skip empty rows (all columns empty)
+                    const isEmptyRow = cols.every(col => !col || col.trim() === '');
+                    if (isEmptyRow) continue;
+                    
+                    // Your exact column mapping - Column J is index 9
+                    const ticket = {
+                        'Ticket ID': cols[0] || `WEB-${1000 + i}`,          // Column A (index 0)
+                        'Date Created': cols[1] || '',                     // Column B (index 1)
+                        'Talent Name': cols[2] || 'Unknown Talent',        // Column C (index 2)
+                        'Type of Website Update': cols[3] || 'General Update', // Column D (index 3)
+                        'Publication Title': cols[4] || 'No title provided', // Column E (index 4)
+                        'Files Attached': cols[5] || 'No files',           // Column F (index 5)
+                        'Reference Link': cols[6] || '',                   // Column G (index 6)
+                        // Column H would be cols[7] (if exists)
+                        // Column I would be cols[8] (if exists)
+                        'Assigned To': cols[9] || 'Unassigned'             // Column J (index 9)
+                    };
+                    
+                    tickets.push(ticket);
+                }
+                
+                console.log(`Loaded ${tickets.length} website update tickets`);
+                
+                if (tickets.length > 0) {
+                    displayTickets(tickets);
+                    updateStats(tickets);
+                } else {
+                    showEmptyState();
+                }
+                
+            } catch (err) {
+                console.error('Error loading tickets:', err);
+                document.getElementById('errorMessage').textContent = `Error: ${err.message}`;
+                error.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        }
+        
+        function parseCSVRow(row) {
+            const cols = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < row.length; i++) {
+                const char = row[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    cols.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            cols.push(current.trim());
+            return cols;
+        }
+        
+        function displayTickets(tickets) {
+            const tbody = document.getElementById('ticketsBody');
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('ticketsTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            tbody.innerHTML = '';
+            
+            tickets.forEach(ticket => {
+                const row = document.createElement('tr');
+                
+                // Format date
+                let formattedDate = 'N/A';
+                if (ticket['Date Created']) {
+                    try {
+                        const createdDate = new Date(ticket['Date Created']);
+                        if (!isNaN(createdDate.getTime())) {
+                            formattedDate = createdDate.toLocaleDateString();
+                        }
+                    } catch (e) {
+                        formattedDate = ticket['Date Created'];
+                    }
+                }
+                
+                // Check if unassigned
+                const isUnassigned = !ticket['Assigned To'] || 
+                    ticket['Assigned To'].toLowerCase() === 'unassigned' || 
+                    ticket['Assigned To'].trim() === '';
+                
+                // Format files and links
+                const hasFiles = ticket['Files Attached'] && 
+                    ticket['Files Attached'].toLowerCase() !== 'no files' &&
+                    ticket['Files Attached'].trim() !== '';
+                
+                const hasReference = ticket['Reference Link'] && ticket['Reference Link'].trim() !== '';
+                
+                row.innerHTML = `
+                    <td><span class="ticket-id">${ticket['Ticket ID']}</span></td>
+                    <td>${formattedDate}</td>
+                    <td><div class="talent-name">${ticket['Talent Name']}</div></td>
+                    <td>
+                        <span class="update-type">${ticket['Type of Website Update']}</span>
+                    </td>
+                    <td>
+                        <div class="publication-title">${ticket['Publication Title']}</div>
+                    </td>
+                    <td>
+                        <div class="files-link">
+                            ${hasFiles ? 
+                                `<span class="files-attached"><i class="fas fa-paperclip"></i> ${ticket['Files Attached']}</span>` : 
+                                `<span style="color: #94a3b8; font-size: 0.85rem;">No files</span>`
+                            }
+                            ${hasReference ? 
+                                `<span class="reference-link"><a href="${ticket['Reference Link']}" target="_blank"><i class="fas fa-external-link-alt"></i> Reference Link</a></span>` : 
+                                ''
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <span class="assignee ${isUnassigned ? 'unassigned-badge' : ''}">
+                            <i class="fas fa-user${isUnassigned ? '-slash' : ''}"></i>
+                            ${ticket['Assigned To']}
+                        </span>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            loading.style.display = 'none';
+            emptyState.style.display = 'none';
+            table.style.display = 'table';
+        }
+        
+        function showEmptyState() {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('ticketsTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            loading.style.display = 'none';
+            table.style.display = 'none';
+            emptyState.style.display = 'block';
+            
+            // Update stats to show zeros
+            updateStats([]);
+        }
+        
+        function updateStats(tickets) {
+            // Total active tickets
+            document.getElementById('totalTickets').textContent = tickets.length;
+            
+            // Unassigned tickets
+            const unassigned = tickets.filter(t => 
+                !t['Assigned To'] || 
+                t['Assigned To'].toLowerCase() === 'unassigned' ||
+                t['Assigned To'].trim() === ''
+            ).length;
+            document.getElementById('unassigned').textContent = unassigned;
+            
+            // Tickets with files attached
+            const withFiles = tickets.filter(t => 
+                t['Files Attached'] && 
+                t['Files Attached'].toLowerCase() !== 'no files' &&
+                t['Files Attached'].trim() !== ''
+            ).length;
+            document.getElementById('withFiles').textContent = withFiles;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('refreshBtn').addEventListener('click', loadTickets);
+            
+            // Setup search
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const search = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('#ticketsBody tr');
+                const emptyState = document.getElementById('emptyState');
+                
+                // Hide empty state if search is active
+                if (search.trim() !== '') {
+                    emptyState.style.display = 'none';
+                }
+                
+                let visibleRows = 0;
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(search)) {
+                        row.style.display = '';
+                        visibleRows++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show empty state if search returns no results
+                if (search.trim() !== '' && visibleRows === 0) {
+                    emptyState.style.display = 'block';
+                    document.querySelector('#emptyState h3').textContent = 'No Tickets Match Your Search';
+                    document.querySelector('#emptyState p').textContent = 'No active tickets found matching your search criteria. Try different keywords or clear your search.';
+                } else if (search.trim() === '' && visibleRows === 0 && rows.length === 0) {
+                    // Original empty state (no tickets at all)
+                    showEmptyState();
+                }
+            });
+            
+            // Load tickets
+            loadTickets();
+            
+            // Auto-refresh every 3 minutes
+            setInterval(loadTickets, 3 * 60 * 1000);
+        });
+    </script>
+</body>
+</html>
