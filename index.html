@@ -94,7 +94,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1100px;
+            min-width: 1300px;
         }
         
         th {
@@ -109,7 +109,7 @@
         td {
             padding: 15px;
             border-bottom: 1px solid #fef9c3;
-            vertical-align: top;
+            vertical-align: middle;
         }
         
         tr:hover {
@@ -190,6 +190,78 @@
             color: #d97706;
         }
         
+        .functions-cell {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-for-action {
+            background: #3182ce;
+            color: white;
+        }
+        
+        .btn-for-action:hover {
+            background: #2c5282;
+        }
+        
+        .btn-action-done {
+            background: #cbd5e0;
+            color: #4a5568;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .btn-close {
+            background: #e53e3e;
+            color: white;
+            border: none;
+        }
+        
+        .btn-close:hover {
+            background: #c53030;
+        }
+        
+        .toast-message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2d3748;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
         .loading {
             text-align: center;
             padding: 60px 20px;
@@ -223,7 +295,7 @@
             font-size: 1.5rem;
         }
         
-        /* New: Empty state styles */
+        /* Empty state styles */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -302,7 +374,7 @@
                 <button onclick="loadTickets()">Try Again</button>
             </div>
             
-            <!-- New: Empty state message -->
+            <!-- Empty state message -->
             <div id="emptyState" class="empty-state" style="display: none;">
                 <i class="fas fa-clipboard-check"></i>
                 <h3>No Active Tickets Found</h3>
@@ -322,6 +394,7 @@
                         <th>Publication Title</th>
                         <th>Files & Links</th>
                         <th>Assigned To</th>
+                        <th>Functions</th>
                     </tr>
                 </thead>
                 <tbody id="ticketsBody"></tbody>
@@ -331,7 +404,104 @@
 
     <script>
         const ACTIVE_TICKETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLmIeIOdtDoDMI0WOMYMjsa77L2S-gF9OyL7eyLvbnGJatNeFDHRgiN5qLZPhYEDsUx1wINXebriLT/pub?gid=1410126172&single=true&output=csv';
-        
+        const MIS_ACTIONS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLmIeIOdtDoDMI0WOMYMjsa77L2S-gF9OyL7eyLvbnGJatNeFDHRgiN5qLZPhYEDsUx1wINXebriLT/pub?gid=33374487&single=true&output=csv';
+        const FOR_ACTION_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScnazN4BDrpoSm1-Dp2KKxfAi0LHVWp5rLmp52NKwX9yvOx2w/viewform?usp=pp_url&entry.525969148=Administrator+Access+(MIS+Personnel+Only)';
+        const CLOSE_TICKET_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScnazN4BDrpoSm1-Dp2KKxfAi0LHVWp5rLmp52NKwX9yvOx2w/viewform?usp=pp_url&entry.525969148=Close+Ticket';
+
+        // Global functions for clipboard copy
+        window.copyToClipboard = function(text) {
+            // Try using the Clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Close Ticket link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Clipboard API failed:', err);
+                    fallbackCopyToClipboard(text);
+                });
+            } else {
+                fallbackCopyToClipboard(text);
+            }
+        };
+
+        function fallbackCopyToClipboard(text) {
+            // Fallback method using textarea
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // Make the textarea out of viewport
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('Close Ticket link copied to clipboard!');
+                } else {
+                    showToast('Failed to copy link. Please try again.');
+                }
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showToast('Failed to copy link. Please try again.');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-message';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        let misActionsTickets = new Set();
+
+        async function loadMISActions() {
+            try {
+                console.log('Loading MIS Actions from:', MIS_ACTIONS_CSV_URL);
+                const response = await fetch(MIS_ACTIONS_CSV_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                
+                if (!csvText || csvText.trim().length === 0) {
+                    console.log('MIS Actions CSV is empty');
+                    return;
+                }
+                
+                const rows = csvText.split('\n').filter(row => row.trim() !== '');
+                misActionsTickets.clear();
+                
+                // Start from row 2 (index 1) to skip header
+                for (let i = 1; i < rows.length; i++) {
+                    if (rows[i].trim() === '') continue;
+                    
+                    // Parse CSV row and get column A (Ticket ID)
+                    const cols = parseCSVRow(rows[i]);
+                    if (cols.length > 0 && cols[0].trim()) {
+                        misActionsTickets.add(cols[0].trim());
+                    }
+                }
+                
+                console.log('Loaded', misActionsTickets.size, 'ticket IDs from MIS Actions sheet');
+            } catch (err) {
+                console.error('Error loading MIS Actions:', err);
+                // Don't throw error - we can still show tickets without MIS Actions data
+            }
+        }
+
         async function loadTickets() {
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
@@ -344,6 +514,9 @@
             emptyState.style.display = 'none';
             
             try {
+                // First load MIS Actions data
+                await loadMISActions();
+                
                 console.log('Loading website update tickets from:', ACTIVE_TICKETS_CSV_URL);
                 const response = await fetch(ACTIVE_TICKETS_CSV_URL);
                 
@@ -443,6 +616,21 @@
             
             tickets.forEach(ticket => {
                 const row = document.createElement('tr');
+                const ticketId = ticket['Ticket ID'] || '';
+                
+                // Check if ticket exists in MIS Actions sheet
+                const isInMISActions = misActionsTickets.has(ticketId);
+                
+                // Format MIS Actions button
+                let misActionButton = '';
+                if (isInMISActions) {
+                    misActionButton = `<span class="btn btn-action-done"><i class="fas fa-check-circle"></i> Action Done</span>`;
+                } else {
+                    misActionButton = `<a href="${FOR_ACTION_FORM_URL}" target="_blank" class="btn btn-for-action"><i class="fas fa-tasks"></i> For Action</a>`;
+                }
+                
+                // Format Close Ticket button - using window.copyToClipboard
+                const closeButton = `<button onclick="window.copyToClipboard('${CLOSE_TICKET_FORM_URL}')" class="btn btn-close"><i class="fas fa-times-circle"></i> Close Ticket</button>`;
                 
                 // Format date
                 let formattedDate = 'N/A';
@@ -496,6 +684,12 @@
                             <i class="fas fa-user${isUnassigned ? '-slash' : ''}"></i>
                             ${ticket['Assigned To']}
                         </span>
+                    </td>
+                    <td>
+                        <div class="functions-cell">
+                            ${misActionButton}
+                            ${closeButton}
+                        </div>
                     </td>
                 `;
                 
@@ -586,5 +780,4 @@
         });
     </script>
 </body>
-
 </html>
